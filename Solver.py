@@ -21,89 +21,8 @@ class SolverResultEdge:
         self.edgeVehicleCount = []
         self.edgeProductFlow = []
         self.solvingTime = 0
-"""
-def SolveMIP(net: NetProductPath.NetProducts, solverData, maxTime = 7200):
-    problem = Problem("MIP")
 
-    # Определяем переменные
-
-    # Переменные для путей продуктов
-    flowProductPath = {}
-    for (productId, info) in net.products.items():
-        flowProductPath[productId] = []
-        demand = info["demand"]
-        for pathI in range(len(solverData[productId])):
-            flowProductPath[productId].append(problem.addVariable(lb=0, ub=demand, name="path_"+str(productId)+"_"+str(pathI)))
-
-    # Переменные для количества транспорта на каждом ребре 
-    vehicleCount = {edge : problem.addVariable(lb=0, vtype=INTEGER, name="edge_"+str(edge[0])+"_"+str(edge[1])) for edge in net.edges}
-
-    # Вводим целевую функцию
-    objectiveExpr = 0
-
-    # Вводим ограничения
-    # 1. Удовлетворение запроса для каждого товара
-    demandExpr = {productId : 0 for productId in net.productId}
-    # 2. Связь между потоком через ребро и количеством ТС
-    edgeExpr = {edge : 0 for edge in net.edges}
-    # 3. Максимальный перегруз на складе
-    storageExpr = {storageId : None for storageId in net.storageId}
-
-    # Теперь заполняем ограничения и целевую функцию, так как они все выражаються примерно одинакого
-    # Сначала добавим часть с переменными путей
-    for (productId, paths) in solverData.items():
-        for pathI, p in enumerate(paths):
-            path = p.path
-            pathVar = flowProductPath[productId][pathI]
-            demandExpr[productId] += pathVar
-            for storageI in range(len(path)-1):
-                pathEdge = (path[storageI], path[storageI+1])
-                if storageI>0:
-                    if not storageExpr[pathEdge[0]]:
-                        storageExpr[pathEdge[0]] = 0
-                    storageExpr[pathEdge[0]] += pathVar
-                    objectiveExpr += net.storages[pathEdge[0]]["overloadPrice"] * pathVar
-                edgeExpr[pathEdge] += pathVar
-
-    # Затем добавим часть для каждого ребра
-    for (edge, edgeVar) in vehicleCount.items():
-        edgeExpr[edge] += -net.vehicleCapacity * edgeVar
-        objectiveExpr += net.edgesPrices[edge] * edgeVar
-    
-    # Добавляем ограничения и целевую функцию в модель
-    for (productId, dExpr) in demandExpr.items():
-        problem.addConstraint(dExpr == float(net.products[productId]["demand"]), name="cDemand_"+str(productId))
-    for (edge, eExpr) in edgeExpr.items():
-        problem.addConstraint(eExpr <= 0, name="cEdge_"+str(edge[0])+"_"+str(edge[1]))
-    for (storageId, sExpr) in storageExpr.items():
-        if sExpr:
-            problem.addConstraint(sExpr <= float(net.storages[storageId]["maxOverload"]), name="cStorage_"+str(storageId))
-    problem.setObjective(objectiveExpr, sense=MINIMIZE)
-
-    # Устанавливаем ограничение времени
-    settings = SolverSettings()
-    settings.set_parameter("log_to_console", False)
-    settings.set_parameter("time_limit", maxTime)
-
-    # Решаем задачу
-    problem.solve(settings)
-
-    result = SolverResult()
-    if problem.Status.name == "Optimal" or problem.Status.name == "FeasibleFound":
-        result.resultPrice = problem.ObjValue
-        result.solvingTime = problem.SolveTime
-        for (productId, pathsVar) in flowProductPath.items():
-            result.productPathFlow[productId] = {}
-            for pathI, var in enumerate(pathsVar):
-                value = var.getValue()
-                if not Math.Eq(0, value):
-                    result.productPathFlow[productId][pathI] = value
-        result.edgeVehicleCount = {edge : edgeVar.getValue() for (edge, edgeVar) in vehicleCount.items()}
-
-    return result
-"""
-
-def SolveMIP_HIGHS(net: NetProductPath.NetProducts, solverData, maxTime = 7200, initSolution : SolverResult = None):
+def SolveMILP(net: NetProductPath.NetProducts, solverData, maxTime = 7200, initSolution : SolverResult = None):
     problem = pulp.LpProblem('MinCostFlow', pulp.LpMinimize)
 
     # Определяем переменные
@@ -194,7 +113,7 @@ def SolveMIP_HIGHS(net: NetProductPath.NetProducts, solverData, maxTime = 7200, 
 
     return result
 
-def SolveMIP_HIGHS_Edge(net: NetProductPath.NetProducts, maxTime = 7200):
+def SolveMILP_Edge(net: NetProductPath.NetProducts, maxTime = 7200):
     problem = pulp.LpProblem('MinCostFlow', pulp.LpMinimize)
 
     # Определяем переменные
