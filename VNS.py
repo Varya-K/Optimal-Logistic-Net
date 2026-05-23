@@ -19,7 +19,7 @@ class VNS:
         self.shortestPaths.PrepareData(self.net)
         self.InitSolution()
         print("Init:", str(self.result.resultPrice))
-
+        self.firstCount=0
         k = 1
         sameResult = -1
         while k < 4 and time() - startTime < maxSolvingTime:
@@ -36,7 +36,7 @@ class VNS:
             same = not (sameResult == -1 or Math.Sm(self.result.resultPrice, sameResult))
             sameResult = self.result.resultPrice
             self.ClearData()
-            print("After shake", k, ":", str(self.result.resultPrice))
+            print("After Shake", k, ":", str(self.result.resultPrice))
             self.VND(startTime, maxSolvingTime, same)
 
             if Math.Bg(currRes, self.result.resultPrice):
@@ -48,13 +48,12 @@ class VNS:
 
     def VND(self, startTime, maxSolvingTime, same=False):
         proceed = True
-        firstCount = 0
         time1 = self.net.storageCount//2
 
         while proceed and time() - startTime < maxSolvingTime:
-            first = self.ProccessAddNewShortestPathsNeighborhood(firstCount % 3 + 1, firstCount % 2, 5 + time1)
-            firstCount += 1
-            print("after first:", str(self.result.resultPrice))
+            first = self.ProccessAddNewShortestPathsNeighborhood(self.firstCount % 3 + 1, self.firstCount % 2, 5 + time1)
+            self.firstCount += 1
+            print("After VND-1:", str(self.result.resultPrice))
 
             if not first:
                 if same:
@@ -62,10 +61,10 @@ class VNS:
                     self.ClearData()
                     continue
                 second = self.ProccessAddNewShortestPathsThroughUsedEdgesNeighborhood(2, 1, 30 + time1 * 2)
-                print("after second:", str(self.result.resultPrice))
+                print("After VND-2:", str(self.result.resultPrice))
                 if not second:
                     proceed = self.ProccessAddNewShortestPathsAvoidingStoragesNeighborhood(1, 0.75, self.net.storageCount // 5, self.net.storageCount // 4, 30 + time1 * 2)
-                    print("after third:", str(self.result.resultPrice))
+                    print("After VND-3:", str(self.result.resultPrice))
                 self.ClearData()
             else:
                 same = False
